@@ -429,6 +429,17 @@ class CertCLI(CLI):
         self.options = options
         self.prompt_push("certs")
 
+    complete_show = CLI._complete_key
+
+    @ensure_arg("cert")
+    def do_show(self, cert):
+        keys = list(Key.selectBy(name=cert))
+        if len(keys) == 0:
+            print "key for cert [%s] not found" % cert
+        else:
+            for c in keys[0].certs:
+                print c.cert
+
     def do_ls(self, arg):
         for cert in Cert.select():
             if cert.start_time and cert.end_time:
