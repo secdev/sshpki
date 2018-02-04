@@ -463,6 +463,7 @@ class KeyCLI(CLI):
         self.prompt_push("keys")
 
     complete_revoke = CLI._complete_key
+    complete_del = CLI._complete_key
     complete_show = CLI._complete_key
 
     def do_ls(self, arg):
@@ -479,6 +480,15 @@ class KeyCLI(CLI):
             print "key [%s] not found" % cert
         else:
             print keys[0].pubkey
+
+    @ensure_arg("key")
+    def do_del(self, key_name):
+        keys = list(Key.selectBy(name=key_name))
+        if len(keys) == 0:
+            print "Key [%s] not found" % key_name
+            return
+        key = keys[0]
+        key.delete_key()
 
     @ensure_arg("key")
     def do_revoke(self, key_name):
