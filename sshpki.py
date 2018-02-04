@@ -513,8 +513,15 @@ class KeyCLI(CLI):
         pubkey = open(key_file).read()
         o = check_output(["ssh-keygen", "-lf", key_file])
         bits = int(o.split(" ",1)[0])
+        priv = False
+        if not pubkey.startswith("ssh-rsa"):
+            pubkey = check_output(["ssh-keygen", "-yf", key_file])
+            priv = True
         name = rl_input("name: ")
-        Key(name=name, bits=bits, pubkey=pubkey)
+        k = Key(name=name, bits=bits, pubkey=pubkey)
+        if priv:
+            FileExport(key=k, filename=key_file)
+
 
 class UseCLI(CLI):
     def __init__(self, options, ca):
