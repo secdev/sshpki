@@ -463,6 +463,7 @@ class KeyCLI(CLI):
         self.prompt_push("keys")
 
     complete_revoke = CLI._complete_key
+    complete_show = CLI._complete_key
 
     def do_ls(self, arg):
         for k in Key.select():
@@ -470,6 +471,14 @@ class KeyCLI(CLI):
             signed = "" if k.is_ca else (("signed by [%s]" % k.ca.name) if k.ca else "never signed")
             status = "REVOKED" if k.revoked else "ACTIVE" 
             print "%-30s %-4s %-7s  %4i bits  %s" % (k.name, ca, status, k.bits, signed)
+
+    @ensure_arg("key")
+    def do_show(self, key):
+        keys = list(Key.selectBy(name=key))
+        if len(keys) == 0:
+            print "key [%s] not found" % cert
+        else:
+            print keys[0].pubkey
 
     @ensure_arg("key")
     def do_revoke(self, key_name):
