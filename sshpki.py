@@ -49,15 +49,22 @@ class Key(SQLObject):
     certs = MultipleJoin("Cert", joinColumn="key_id")
     ca = ForeignKey("CA", default=None)
     is_ca = BoolCol(default=False)
+    def delete_key(self):
+        for cert in self.certs:
+            cert.delete_cert()
+        self.delete(self.id)
 
 class Cert(SQLObject):
     ca = ForeignKey("CA")
-    key = ForeignKey("Key")
+    key = ForeignKey("Key", cascade=False)
     serial = IntCol(default=-1)
     profile = ForeignKey("Profile")
     cert = StringCol(unique=True)
     start_time = DateTimeCol(default=None)
     end_time = DateTimeCol(default=None)
+    def delete_key(self):
+        self.profile.delete_profile()
+        self.delete(self.id)
 
 class Profile(SQLObject):
     principals = StringCol(default=None)
@@ -69,17 +76,19 @@ class Profile(SQLObject):
     pty = BoolCol(default=None)
     user_rc = BoolCol(default=None)
     validity = StringCol(default=None)
+    def delete_profile(self):
+        self.delete(self.id)
 
 class ProfileTemplate(SQLObject):
     name = UnicodeCol(unique=True)
     profile = ForeignKey("Profile")
 
 class FileExport(SQLObject):
-    key = ForeignKey("Key")
+    key = ForeignKey("Key", cascade=True)
     filename = StringCol()
 
 class YubikeyExport(SQLObject):
-    key = ForeignKey("Key")
+    key = ForeignKey("Key", cascade=True)
     serial = IntCol()
 
 
