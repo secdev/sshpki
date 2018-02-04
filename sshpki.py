@@ -469,6 +469,14 @@ class KeyCLI(CLI):
         for cert in key.certs:
             update_krl(self.options, cert.ca)
 
+    @ensure_arg("key file")
+    def do_import(self, key_file):
+        pubkey = open(key_file).read()
+        o = check_output(["ssh-keygen", "-lf", key_file])
+        bits = int(o.split(" ",1)[0])
+        name = rl_input("name: ")
+        Key(name=name, bits=bits, pubkey=pubkey)
+
 class UseCLI(CLI):
     def __init__(self, options, ca):
         CLI.__init__(self)
