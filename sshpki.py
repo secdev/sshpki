@@ -363,10 +363,6 @@ class MainCLI(CLI):
         self.pkiname = m.pkiname
         self.prompt_push(self.pkiname)
 
-    complete_use = CLI._complete_ca
-    complete_show = CLI._complete_ca
-    complete_revoke = CLI._complete_key
-
     ### commands
 
     def do_ca(self, arg):
@@ -390,6 +386,9 @@ class CACLI(CLI):
         CLI.__init__(self)
         self.options = options
         self.prompt_push("CA")
+
+    complete_use = CLI._complete_ca
+    complete_show = CLI._complete_ca
 
     def do_ls(self, arg):
         for ca in CA.select():
@@ -442,6 +441,8 @@ class KeyCLI(CLI):
         CLI.__init__(self)
         self.options = options
         self.prompt_push("keys")
+
+    complete_revoke = CLI._complete_key
 
     def do_ls(self, arg):
         for k in Key.select():
