@@ -493,7 +493,7 @@ class KeyCLI(CLI):
     @ensure_arg("key")
     def do_revoke(self, key_name):
         keys = list(Key.selectBy(name=key_name))
-        if list(keys) == 0:
+        if len(keys) == 0:
             print "Key [%s] not found" % key_name
             return
         key = keys[0]
