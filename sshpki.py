@@ -421,7 +421,7 @@ class CACLI(CLI):
         if len(cas) == 0:
             print "CA [%s] not found" % ca
         else:
-            print cas[0].key.pubkey
+            print "cert-authority %s" % cas[0].key.pubkey
 
 class CertCLI(CLI):
     def __init__(self, options):
@@ -533,7 +533,7 @@ class UseCLI(CLI):
     complete_sign = CLI._complete_key
 
     def do_show(self, arg):
-        print self.ca.key.pubkey
+        print "cert-authority %s" % self.ca.key.pubkey
 
     @ensure_arg("cert")
     def do_add(self, cert_name):
