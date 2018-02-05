@@ -271,14 +271,13 @@ def sign_key(options, cert_name, ca, key, profile_template):
     return cert
 
 
-def create_CA(options, ca_name):
-    k = create_key(options, ca_name, options.ca_bits)
-    k.is_ca = True
+def create_CA(options, ca_name, key):
+    key.is_ca = True
     # create empty KRL
     with get_tmpfile(options) as krl_file:
         check_call([ "ssh-keygen", "-kf", krl_file.name ])
         krl = krl_file.read()
-    ca = CA(name=ca_name, key=k, krl=krl)
+    ca = CA(name=ca_name, key=key, krl=krl)
 
 def update_krl(options, ca):
     rev = []
@@ -407,7 +406,8 @@ class CACLI(CLI):
 
     @ensure_arg("CA")
     def do_add(self, ca_name):
-        create_CA(self.options, ca_name)
+        k = create_key(self.options, ca_name, self.options.ca_bits)
+        create_CA(self.options, ca_name, k)
 
     @ensure_arg("CA")
     def do_use(self, ca_name):
