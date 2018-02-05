@@ -389,6 +389,10 @@ class MainCLI(CLI):
         cli = ProfileTemplateCLI(self.options)
         cli.cmdloop_catcherrors()
 
+    def do_yubikey(self, arg):
+        cli = YubikeyCLI(self.options)
+        cli.cmdloop_catcherrors()
+
 class CACLI(CLI):
     def __init__(self, options):
         CLI.__init__(self)
@@ -682,6 +686,26 @@ class ProfileTemplateCLI(CLI):
                 setattr(p, k, v)
         else:
             print "ERROR: Profile template [%s] not found." % name
+
+class YubikeyCLI(CLI):
+    def __init__(self, options):
+        CLI.__init__(self)
+        self.options = options
+        self.prompt_push("yubikey")
+
+    def do_status(self, arg):
+        o = check_output(["ykneomgr", "--get-mode"])
+        mode = int(o,16)
+        strmode = "+".join(x for i,x in enumerate(["OTP","CCID", "U2F"]) if (mode+1)&(1<<i))
+        if mode & 0x80:
+            strmode += " with eject"
+        o = check_output(["ykneomgr", "--get-serialno"])
+        serial = o.strip()
+        print "Found yubikey neo with serial [%s] in mode %s" % (serial, strmode)
+        if (mode+1) & 2: # CCID:
+            check_call(["yubico-piv-tool", "-a", "status"])
+        else:
+            print "CCID mode must be enabled to have more informations with sshpki"
 
 
 
