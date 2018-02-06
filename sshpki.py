@@ -370,6 +370,8 @@ class CLI(cmd.Cmd):
         return self._complete(Key, text)
     def _complete_profiletemplate(self, text, line, begidx, endidx):
         return self._complete(ProfileTemplate, text)
+    def _complete_yubikey(self, text, line, begidx, endidx):
+        return self._complete(Yubikey, text, "serial")
 
 
 
