@@ -360,9 +360,9 @@ class CLI(cmd.Cmd):
     def __del__(self):
         self.options.levels = self.oldlevels
 
-    def _complete(self, obj, val):
-        matches = obj.select("name like '%s%%'" % val)
-        return [o.name for o in matches]
+    def _complete(self, obj, val, field="name"):
+        matches = obj.select("%s like '%s%%'" % (field,val))
+        return [getattr(o, field) for o in matches]
 
     def _complete_ca(self, text, line, begidx, endidx):
         return self._complete(CA, text)
