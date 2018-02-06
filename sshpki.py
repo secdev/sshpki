@@ -727,21 +727,26 @@ class YubikeyCLI(CLI):
             except CalledProcessError:
                 print "No yubikey found."
                 return
-        if not ccid:
-            print "Found yubikey with serial [%s]" % serial
-            print "Mode is not CCID. sshpki cannot gather more info."
-            return
-        o = check_output(["ykneomgr", "--get-mode"])
-        mode = int(o,16)
-        strmode = "+".join(x for i,x in enumerate(["OTP","CCID", "U2F"]) if (mode+1)&(1<<i))
-        if mode & 0x80:
-            strmode += " with eject"
-        print "Found yubikey with serial [%s] in mode %s" % (serial, strmode)
-        if (mode+1) & 2: # CCID:
+
+        if ccid:
+            o = check_output(["ykneomgr", "--get-mode"])
+            mode = int(o,16)
+            strmode = "+".join(x for i,x in enumerate(["OTP","CCID", "U2F"]) if (mode+1)&(1<<i))
+            if mode & 0x80:
+                strmode += " with eject"
+            print "Found yubikey with serial [%s] in mode %s" % (serial, strmode)
             check_call(["yubico-piv-tool", "-a", "status"])
         else:
-            print "CCID mode must be enabled to have more informations with sshpki"
+            print "Found yubikey with serial [%s]" % serial
+            print "Mode is not CCID. sshpki cannot gather more info."
 
+        yks = Yubikey.selectBy(serial=serial)
+        if yks:
+            print "This yubikey is enrolled in the database:"
+            yk = yks[0]
+            usage = ("used for key %s" % yk.export.key.name) if yk.export else "not used"
+            owner = ("owned by %s" % yk.owner) if yk.owner else "not owned"
+            print "%-10s %-18s  %s" % (yk.serial,owner,usage)
 
     @ensure_arg("yubikey owner")
     def do_enroll(self, owner):
