@@ -705,6 +705,8 @@ class YubikeyCLI(CLI):
         self.options = options
         self.prompt_push("yubikey")
 
+    complete_del = CLI._complete_yubikey
+
     def do_ls(self, arg):
         for yk in Yubikey.select():
             name = yk.export.key.name if yk.export else "not used"
@@ -784,6 +786,15 @@ class YubikeyCLI(CLI):
         check_call(["yubico-piv-tool", "-k", mgmkey, "-a", "change-puk", "-P12345678"])
         check_call(["yubico-piv-tool", "-k", mgmkey, "-a", "change-pin", "-P123456"])
 
+
+    @ensure_arg("serial number")
+    def do_del(self, serial):
+        y = list(Yubikey.selectBy(serial=serial))
+        if len(y) == 0:
+            print "yubikey not found"
+        else:
+            Yubikey.delete(y[0].id)
+            print "yubikey deleted"
 
 ##  ___  ___
 ## |   \| _ )
