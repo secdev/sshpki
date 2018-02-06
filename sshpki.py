@@ -694,14 +694,28 @@ class YubikeyCLI(CLI):
         self.prompt_push("yubikey")
 
     def do_status(self, arg):
+        try:
+            o = check_output(["ykneomgr", "--get-serialno"])
+            serial = o.strip()
+            ccid = True
+        except CalledProcessError:
+            try:
+                o = check_output(["ykinfo", "-s"])
+                serial = o.split(" ",2)[1].strip()
+                ccid = False
+            except CalledProcessError:
+                print "No yubikey found."
+                return
+        if not ccid:
+            print "Found yubikey with serial [%s]" % serial
+            print "Mode is not CCID. sshpki cannot gather more info."
+            return
         o = check_output(["ykneomgr", "--get-mode"])
         mode = int(o,16)
         strmode = "+".join(x for i,x in enumerate(["OTP","CCID", "U2F"]) if (mode+1)&(1<<i))
         if mode & 0x80:
             strmode += " with eject"
-        o = check_output(["ykneomgr", "--get-serialno"])
-        serial = o.strip()
-        print "Found yubikey neo with serial [%s] in mode %s" % (serial, strmode)
+        print "Found yubikey with serial [%s] in mode %s" % (serial, strmode)
         if (mode+1) & 2: # CCID:
             check_call(["yubico-piv-tool", "-a", "status"])
         else:
