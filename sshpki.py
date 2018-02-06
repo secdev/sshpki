@@ -89,7 +89,14 @@ class FileExport(SQLObject):
 
 class YubikeyExport(SQLObject):
     key = ForeignKey("Key", cascade=True)
+    yubikey = ForeignKey("Yubikey", cascade=False)
     serial = IntCol()
+
+class Yubikey(SQLObject):
+    export = ForeignKey("YubikeyExport", cascade=None, default=None)
+    serial = StringCol(default=None, unique=True)
+    mgmkey = StringCol(default=None)
+
 
 
 ##  _   _ _   _ _
@@ -733,7 +740,7 @@ def create_pki(fname):
     cnx = "sqlite://"+os.path.realpath(fname)
     sqlhub.processConnection=connectionForURI(cnx)
     for tb in [Meta, CA, Key, Cert, Profile, ProfileTemplate,
-               FileExport, YubikeyExport]:
+               FileExport, YubikeyExport, Yubikey]:
         tb.createTable()
     name = raw_input("YUBIKEY SSH PKI name: ")
     Meta(version=DBVERSION, pkiname=name)
