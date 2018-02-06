@@ -105,6 +105,9 @@ class Yubikey(SQLObject):
 ##  \___/ \__|_|_|
 ##
 
+def get_random(nb):
+    return open("/dev/random").read(nb)
+
 def rl_input(prompt, prefill=''):
    readline.set_startup_hook(lambda: readline.insert_text(prefill))
    try:
