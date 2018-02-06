@@ -94,6 +94,7 @@ class YubikeyExport(SQLObject):
 
 class Yubikey(SQLObject):
     export = ForeignKey("YubikeyExport", cascade=None, default=None)
+    owner = StringCol(default=None)
     serial = StringCol(default=None, unique=True)
     mgmkey = StringCol(default=None)
 
@@ -709,8 +710,9 @@ class YubikeyCLI(CLI):
 
     def do_ls(self, arg):
         for yk in Yubikey.select():
-            name = yk.export.key.name if yk.export else "not used"
-            print "%-10s %s" % (yk.serial,name)
+            usage = ("used for key %s" % yk.export.key.name) if yk.export else "not used"
+            owner = ("owned by %s" % yk.owner) if yk.owner else "not owned"
+            print "%-10s %-18s  %s" % (yk.serial,owner,usage)
 
     def do_status(self, arg):
         try:
@@ -741,7 +743,8 @@ class YubikeyCLI(CLI):
             print "CCID mode must be enabled to have more informations with sshpki"
 
 
-    def do_enroll(self, arg):
+    @ensure_arg("yubikey owner")
+    def do_enroll(self, owner):
         try:
             o = check_output(["ykneomgr", "--get-serialno"])
             serial = o.strip()
@@ -779,7 +782,7 @@ class YubikeyCLI(CLI):
         print "Resetting material"
         check_call(["yubico-piv-tool", "-a", "reset"])
         mgmkey = get_random(24).encode("hex")
-        Yubikey(serial=serial, mgmkey=mgmkey)
+        Yubikey(serial=serial, mgmkey=mgmkey, owner=owner)
         check_call(["yubico-piv-tool", "-a", "set-mgm-key", "-n", mgmkey])
         print "A new management key has been set"
         print "PUK and PIN must be between 6 and 8 digits"
