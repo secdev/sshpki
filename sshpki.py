@@ -641,12 +641,12 @@ class KeyExportCLI(CLI):
 
     @ensure_arg("file")
     def do_file(self, dest):
-        with get_tmpfile(options) as tmp:
+        with get_tmpfile(self.options) as tmp:
             shutil.copy(self.privfname, tmp.name)
             check_call(["ssh-keygen", "-p", "-P", self.pwd, "-f", tmp.name])
             shutil.copy(tmp.name, dest)
-        self.mark_as_exported()
         FileExport(key=self.key, filename=dest)
+        self.mark_as_exported()
 
     def do_yubikey(self, arg):
         serial = check_output(["ykinfo", "-s"])
