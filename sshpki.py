@@ -341,6 +341,43 @@ def yubikey_get_serial_and_mode():
             return None,None
 
 
+def yubikey_enroll(owner):
+    serial, ccid = yubikey_get_serial_and_mode()
+    if serial is None:
+        print "No yubikey found."
+        return
+    ans = ask("This operation will erase all material on yubikey [%s]. Continue" % serial, "yn")
+    if ans == "n":
+        print "aborted."
+        return
+    if ccid:
+        check_call(["ykneomgr", "--set-mode", "1"])
+    else:
+        check_output("ykpersonalize -y -m 1 2>&1", shell=True)
+    raw_input("Set mode to CCID. Please unplug and replug the yubikey and press enter.")
+
+    # Now we block PIN and PUK to unlock the reset function
+    while True:
+        o = check_output("yubico-piv-tool -P00000000 -N00000000 -a change-pin 2>&1 || true", shell=True)
+        if o.startswith("Failed"):
+            continue
+        break
+    while True:
+        o = check_output("yubico-piv-tool -P00000000 -N00000000 -a unblock-pin 2>&1 || true", shell=True)
+        if o.startswith("Failed"):
+            continue
+        break
+    # PIN and PUK are blocked. We can erase all material
+    print "Resetting material"
+    check_call(["yubico-piv-tool", "-a", "reset"])
+    mgmkey = get_random(24).encode("hex")
+    Yubikey(serial=serial, mgmkey=mgmkey, owner=owner)
+    check_call(["yubico-piv-tool", "-a", "set-mgm-key", "-n", mgmkey])
+    print "A new management key has been set"
+    print "PUK and PIN must be between 6 and 8 digits"
+    check_call(["yubico-piv-tool", "-k", mgmkey, "-a", "change-puk", "-P12345678"])
+    check_call(["yubico-piv-tool", "-k", mgmkey, "-a", "change-pin", "-P123456"])
+
 ##   ___ _    ___
 ##  / __| |  |_ _|
 ## | (__| |__ | |
@@ -785,49 +822,7 @@ class YubikeyCLI(CLI):
 
     @ensure_arg("yubikey owner")
     def do_enroll(self, owner):
-        try:
-            o = check_output(["ykneomgr", "--get-serialno"])
-            serial = o.strip()
-            ccid = True
-        except CalledProcessError:
-            try:
-                o = check_output(["ykinfo", "-s"])
-                serial = o.split(" ", 2)[1].strip()
-                ccid = False
-            except CalledProcessError:
-                print "No yubikey found."
-                return
-        ans = ask("This operation will erase all material on yubikey [%s]. Continue" % serial, "yn")
-        if ans == "n":
-            print "aborted."
-            return
-        if ccid:
-            check_call(["ykneomgr", "--set-mode", "1"])
-        else:
-            check_output("ykpersonalize -y -m 1 2>&1", shell=True)
-        raw_input("Set mode to CCID. Please unplug and replug the yubikey and press enter.")
-
-        # Now we block PIN and PUK to unlock the reset function
-        while True:
-            o = check_output("yubico-piv-tool -P00000000 -N00000000 -a change-pin 2>&1 || true", shell=True)
-            if o.startswith("Failed"):
-                continue
-            break
-        while True:
-            o = check_output("yubico-piv-tool -P00000000 -N00000000 -a unblock-pin 2>&1 || true", shell=True)
-            if o.startswith("Failed"):
-                continue
-            break
-        # PIN and PUK are blocked. We can erase all material
-        print "Resetting material"
-        check_call(["yubico-piv-tool", "-a", "reset"])
-        mgmkey = get_random(24).encode("hex")
-        Yubikey(serial=serial, mgmkey=mgmkey, owner=owner)
-        check_call(["yubico-piv-tool", "-a", "set-mgm-key", "-n", mgmkey])
-        print "A new management key has been set"
-        print "PUK and PIN must be between 6 and 8 digits"
-        check_call(["yubico-piv-tool", "-k", mgmkey, "-a", "change-puk", "-P12345678"])
-        check_call(["yubico-piv-tool", "-k", mgmkey, "-a", "change-pin", "-P123456"])
+        yubikey_enroll(owner)
 
 
     @ensure_arg("serial number")
