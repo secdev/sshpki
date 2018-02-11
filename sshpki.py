@@ -812,7 +812,7 @@ class YubikeyCLI(CLI):
             print "Found yubikey with serial [%s]" % serial
             print "Mode is not CCID. sshpki cannot gather more info."
 
-        yks = Yubikey.selectBy(serial=serial)
+        yks = list(Yubikey.selectBy(serial=serial))
         if yks:
             print "This yubikey is enrolled in the database:"
             yk = yks[0]
