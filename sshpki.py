@@ -592,7 +592,7 @@ class UseCLI(CLI):
 
     @ensure_arg("key")
     def do_sign(self, key_name):
-        cert_name = rl_input("Enter cert name: ")
+        cert_name = rl_input("Enter cert name: ", key_name)
         keys = list(Key.selectBy(name=key_name))
         if len(keys) == 0:
             print "key [%s] not found" % key_name
