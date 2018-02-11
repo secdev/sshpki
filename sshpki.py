@@ -326,6 +326,20 @@ def profile_summary(prof):
 ##   |_| \_,_|_.__/_|_\_\___|\_, | \__\___/_|_|_|_|_|_\__,_|_||_\__,_/__/
 ##                           |__/
 
+def yubikey_get_serial_and_mode():
+    try:
+        o = check_output(["ykneomgr", "--get-serialno"])
+        serial = o.strip()
+        return serial, True
+    except CalledProcessError:
+        try:
+            o = check_output(["ykinfo", "-s"])
+            serial = o.split(" ",2)[1].strip()
+            return serial, False
+        except CalledProcessError:
+            print "No yubikey found."
+            return None,None
+
 
 ##   ___ _    ___
 ##  / __| |  |_ _|
@@ -745,19 +759,10 @@ class YubikeyCLI(CLI):
             print "%-10s %-18s  %s" % (yk.serial,owner,usage)
 
     def do_status(self, arg):
-        try:
-            o = check_output(["ykneomgr", "--get-serialno"])
-            serial = o.strip()
-            ccid = True
-        except CalledProcessError:
-            try:
-                o = check_output(["ykinfo", "-s"])
-                serial = o.split(" ",2)[1].strip()
-                ccid = False
-            except CalledProcessError:
-                print "No yubikey found."
-                return
-
+        serial,ccid = yubikey_get_serial_and_mode()
+        if serial is None:
+            print "No yubikey found."
+            return
         if ccid:
             o = check_output(["ykneomgr", "--get-mode"])
             mode = int(o,16)
