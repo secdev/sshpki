@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import shutil
+import atexit
 import traceback
 from subprocess import check_call, check_output, CalledProcessError, STDOUT
 import datetime
@@ -832,6 +833,8 @@ def open_pki(fname):
 ## |_|  |_\__,_|_|_||_|
 ##
 
+def unlink_temp_dir(options):
+    shutil.rmtree(options.tmp)
 
 def main():
     from argparse import ArgumentParser
@@ -843,6 +846,7 @@ def main():
                         help="path to the pki DB file")
     parser.add_argument("--ca_bits", default=4096)
     parser.add_argument("--cert_bits", default=2048)
+    parser.add_argument("--keep-temp", action="store_true")
 
     options = parser.parse_args()
 
@@ -854,6 +858,8 @@ def main():
 
         options.tmp = tempfile.mkdtemp(dir=TMPPATH)
         options.levels = [ ]
+        if not options.keep_temp:
+            atexit.register(unlink_temp_dir, options)
 
         cli = MainCLI(options)
         cli.cmdloop_catcherrors()
