@@ -239,7 +239,7 @@ def sign_key(options, cert_name, ca, key, profile_template):
     for k in FileExport.selectBy(key=ca.key):
         print "%2i. file %s" % (len(choice), k.filename)
         choice.append(k)
-    for k in YubikeyExport.select():
+    for k in YubikeyExport.selectBy(key=ca.key):
         print "%2i. yubikey with serial #%i" % (len(choice), k.serial)
         choice.append(k)
     ans = int(ask("private key source: ", map(str,range(len(choice)))))
