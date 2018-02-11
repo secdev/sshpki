@@ -274,7 +274,7 @@ def sign_key(options, cert_name, ca, key, profile_template):
     ca.serial += 1
     key.ca = ca
     certcontent = open(certfile).read()
-    cert = Cert(ca=ca, key=key, profile=prof2, serial=1, cert=certcontent)
+    cert = Cert(ca=ca, key=key, profile=prof2, serial=ca.serial, cert=certcontent)
     if start_time:
         cert.start_time = start_time
     if end_time:
