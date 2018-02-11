@@ -549,9 +549,40 @@ class UseCLI(CLI):
         self.prompt_push(ca.name)
 
     complete_sign = CLI._complete_key
+    complete_show_key = CLI._complete_key
+    complete_show_cert = CLI._complete_key
 
     def do_show(self, arg):
         print "cert-authority %s" % self.ca.key.pubkey
+
+    @ensure_arg("key")
+    def do_show_key(self, name):
+        keys = list(Key.selectBy(name=name))
+        if not keys:
+            print "key [%s] not found" % name
+            return
+        key = keys[0]
+        if key.ca != self.ca:
+            if key.ca:
+                print "Warning: this key is not signed by the current CA [%s] but by CA [%s]" % (self.ca.name, key.ca.name)
+            else:
+                print "Warning; this key is not signed by any CA yet."
+        print key.pubkey
+
+    @ensure_arg("key")
+    def do_show_cert(self, name):
+        keys = list(Key.selectBy(name=name))
+        if not keys:
+            print "key [%s] not found" % name
+            return
+        key = keys[0]
+        if not key.certs:
+            print "No certs found for key [%s]" % name
+        else:
+            for cert in key.certs:
+                if cert.ca != self.ca:
+                    print "Warning: this cert is not signed by the current CA [%s] but by CA [%s]" % (self.ca.name, cert.ca.name)
+                print cert.cert
 
     @ensure_arg("cert")
     def do_add(self, cert_name):
