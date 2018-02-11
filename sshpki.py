@@ -609,13 +609,11 @@ class KeyExportCLI(CLI):
 
     @ensure_arg("file")
     def do_file(self, dest):
-        tmp = tempfile.mktemp(dir=self.options.tmp)
-        shutil.copy(self.privfname, tmp)
-        check_call(["ssh-keygen", "-p", "-P", self.pwd,
-                    "-f", tmp])
-        shutil.copy(tmp, dest)
+        with get_tmpfile(options) as tmp:
+            shutil.copy(self.privfname, tmp.name)
+            check_call(["ssh-keygen", "-p", "-P", self.pwd, "-f", tmp.name])
+            shutil.copy(tmp.name, dest)
         self.mark_as_exported()
-        os.unlink(tmp)
         FileExport(key=self.key, filename=dest)
 
     def do_yubikey(self, arg):
