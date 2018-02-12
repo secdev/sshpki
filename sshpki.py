@@ -7,6 +7,8 @@ import re
 import shutil
 import atexit
 import traceback
+import base64
+import tarfile
 from subprocess import check_call, check_output, CalledProcessError, STDOUT
 import datetime
 import readline
@@ -602,6 +604,7 @@ class UseCLI(CLI):
     complete_sign = CLI._complete_key
     complete_show_key = CLI._complete_key
     complete_show_cert = CLI._complete_key
+    complete_export = CLI._complete_key
 
     def do_show(self, arg):
         print "cert-authority %s" % self.ca.key.pubkey
@@ -673,6 +676,49 @@ class UseCLI(CLI):
                 print "  -> certificate {cert.serial:>3} {profile} {validity}".format(
                     cert=cert, validity=validity, profile=profile_summary(cert.profile))
 
+    @ensure_arg("key")
+    def do_export(self, name):
+        keys = list(Key.selectBy(name=name))
+        if not keys:
+            print "key [%s] not found" % name
+            return
+        key = keys[0]
+        cert = None
+        t = datetime.datetime.now()
+        for c in key.certs:
+            if c.start_time and c.start_time > t:
+                continue
+            if c.end_time and c.end_time < t:
+                continue
+            if not cert:
+                cert = c
+            elif not c.end_time or c.end_time > cert.end_time:
+                cert = c
+            if not cert.end_time:
+                break
+        if not cert:
+            print "No valid cert found for key [%s]" % name
+            return
+
+
+        tarstr=StringIO()
+        t=tarfile.open(fileobj=tarstr, mode="w:gz")
+
+        ti = tarfile.TarInfo("id_%s.pub" % key.name)
+        ti.size = len(key.pubkey)
+        ti.type=tarfile.REGTYPE
+        t.addfile(ti, StringIO(key.pubkey))
+
+        ti = tarfile.TarInfo("id_%s-cert.pub" % key.name)
+        ti.size = len(cert.cert)
+        ti.type=tarfile.REGTYPE
+        t.addfile(ti, StringIO(cert.cert))
+
+        t.close()
+
+        tarstr.getvalue()
+        cmd = "base64 -d <<<%s | tar zx" % (base64.b64encode(tarstr.getvalue())).decode()
+        print(cmd)
 
 
 class KeyExportCLI(CLI):
