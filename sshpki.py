@@ -131,8 +131,8 @@ def ask(q, r, default=""):
             break
     return ans
 
-def pwqgen():
-    return check_output("pwqgen").strip()
+def passwdgen():
+    return get_random(16).encode("hex")
 
 def get_tmpfile(options):
     return tempfile.NamedTemporaryFile(dir=options.tmp)
@@ -170,7 +170,7 @@ def export_key(options, key, privfname, pwd):
 def create_key(options, name, bits):
     tmpkey = os.path.join(options.tmp, name)
     try:
-        pwd = pwqgen()
+        pwd = passwdgen()
         check_call([
             "ssh-keygen", "-f", tmpkey,
             "-P", pwd,
