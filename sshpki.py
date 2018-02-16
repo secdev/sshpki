@@ -763,11 +763,52 @@ class KeyExportCLI(CLI):
         self.mark_as_exported()
 
     def do_yubikey(self, arg):
-        serial = check_output(["ykinfo", "-s"])
-        serial = int(serial.split()[1])
-        ans = ask("Export to yubikey with serial #%i ?", "yn")
-        if ans == "y":
-            print "not implemented"
+        serial, ccid = yubikey_get_serial_and_mode()
+        if not serial:
+            print "No yubikey found. Please insert a yubikey and retry."
+            return
+        while True:
+            yks = list(Yubikey.selectBy(serial=serial))
+            if yks:
+                yk = yks[0]
+                break
+            ans = ask("This yubikey is not enrolled in the database. Enroll it ?", "yn")
+            if ans == "n":
+                print "yubikey export aborted."
+                return
+            yubikey_enroll()
+        # 9a is for authentication, 9c is for signature
+        slot = "9c" if self.key.is_ca else "9a"
+        cmd = [ "yubico-piv-tool", "-k"+yk.mgmkey, "-s", slot, "-averify-pin", "-aset-chuid", "-aimport-key",
+                "-i", self.privfname, "-p", self.pwd, ]
+#                 "--pin-policy=never", "--touch-policy=always" ]
+        print " ".join(cmd)
+        check_call(cmd)
+        with get_tmpfile(self.options) as pubkey:
+            pubkey.write(self.key.pubkey)
+            pubkey.flush()
+            cmd = [ "ssh-keygen", "-e", "-m", "pkcs8", "-f", pubkey.name ]
+            print " ".join(cmd)
+            pkcs8 = check_output(cmd)
+        with get_tmpfile(self.options) as cert:
+            with get_tmpfile(self.options) as pkcs8key:
+                pkcs8key.write(pkcs8)
+                pkcs8key.flush()
+                cmd = [ "yubico-piv-tool", "-s", slot, "-k", yk.mgmkey,
+                        "-averify-pin", "-aselfsign-certificate",
+                        "-S", "/CN=SSH key [%s]/" % self.key.name,
+                        "-i", pkcs8key.name, "-o", cert.name ]
+                print " ".join(cmd)
+                check_call(cmd)
+            cmd = [ "yubico-piv-tool", "-s", slot, "-k"+yk.mgmkey,
+                    "-aimport-certificate", "-i", cert.name ]
+            print " ".join(cmd)
+            check_call(cmd)
+        cmd = [ "yubico-piv-tool", "-astatus" ]
+        print " ".join(cmd)
+        check_call(cmd)
+        YubikeyExport(key=self.key, serial=int(serial), yubikey=yk)
+        self.mark_as_exported()
 
 class ProfileTemplateCLI(CLI):
     def __init__(self, options):
