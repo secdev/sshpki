@@ -222,9 +222,9 @@ def get_cert_validity(cert_file):
         end = datetime.datetime.strptime(end_s, "%Y-%m-%dT%H:%M:%S")
         return start, end
 
-def sign_key(options, cert_name, ca, key, profile_template):
+def sign_key(options, cert_name, ca, key, profile):
     opts = []
-    profile = profile_template.profile
+    profile = profile
     if profile.validity:
         opts += ["-V", profile.validity]
     if profile.principals:
@@ -645,7 +645,7 @@ class UseCLI(CLI):
     def do_add(self, cert_name):
         key = create_key(self.options, cert_name, self.options.cert_bits)
         proftmpl = get_profile_template(self.options)
-        sign_key(self.options, cert_name, self.ca, key, proftmpl)
+        sign_key(self.options, cert_name, self.ca, key, proftmpl.profile)
 
     @ensure_arg("key")
     def do_sign(self, key_name):
@@ -656,7 +656,7 @@ class UseCLI(CLI):
         else:
             key = keys[0]
             proftmpl = get_profile_template(self.options)
-            sign_key(self.options, cert_name, self.ca, key, proftmpl)
+            sign_key(self.options, cert_name, self.ca, key, proftmpl.profile)
 
     @ensure_arg("KRL file")
     def do_export_krl(self, file_name):
