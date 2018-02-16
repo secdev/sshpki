@@ -278,11 +278,11 @@ def sign_key(options, cert_name, ca, key, profile):
     start_time,end_time = get_cert_validity(certfile)
     profvalues = {k:getattr(profile, k) for k in profile.sqlmeta.columns}
     prof2 = Profile(**profvalues)
-    ca.serial += 1
     key.ca = ca
     certcontent = open(certfile).read()
     cert = Cert(ca=ca, key=key, name=cert_name, profile=prof2, 
                 serial=ca.serial, cert=certcontent)
+    ca.serial += 1
     if start_time:
         cert.start_time = start_time
     if end_time:
