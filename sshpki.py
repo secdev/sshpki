@@ -40,6 +40,7 @@ class CA(SQLObject):
     name = UnicodeCol(unique=True)
     key = ForeignKey("Key")
     serial = IntCol(default=0)
+    hostca = BoolCol(default=False)
     signed = MultipleJoin("Key", joinColumn="ca_id")
     krl = BLOBCol()
 
