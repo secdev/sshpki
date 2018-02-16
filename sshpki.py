@@ -605,6 +605,7 @@ class UseCLI(CLI):
         self.prompt_push(ca.name)
 
     complete_sign = CLI._complete_key
+    complete_resign = CLI._complete_key
     complete_show_key = CLI._complete_key
     complete_show_cert = CLI._complete_key
     complete_export = CLI._complete_key
@@ -657,6 +658,19 @@ class UseCLI(CLI):
             key = keys[0]
             proftmpl = get_profile_template(self.options)
             sign_key(self.options, cert_name, self.ca, key, proftmpl.profile)
+
+    @ensure_arg("key")
+    def do_resign(self, key_name):
+        keys = list(Key.selectBy(name=key_name))
+        if len(keys) == 0:
+            print "key [%s] not found" % key_name
+        else:
+            key = keys[0]
+            if not key.certs:
+                print "Error: Key [%s] has never been signed yet" % key_name
+                return
+            cert = max(key.certs, key=lambda x:x.serial)
+            sign_key(self.options, cert.name, self.ca, key, cert.profile)
 
     @ensure_arg("KRL file")
     def do_export_krl(self, file_name):
