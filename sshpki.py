@@ -646,15 +646,16 @@ class UseCLI(CLI):
                     print "Warning: this cert is not signed by the current CA [%s] but by CA [%s]" % (self.ca.name, cert.ca.name)
                 print cert.cert
 
-    @ensure_arg("cert")
-    def do_add(self, cert_name):
-        key = create_key(self.options, cert_name, self.options.cert_bits)
+    @ensure_arg("key")
+    def do_add(self, key_name):
+        cert_name = rl_input("Enter cert name: ", "%s_%i" % (key_name, self.ca.serial))
+        key = create_key(self.options, key_name, self.options.cert_bits)
         proftmpl = get_profile_template(self.options)
         sign_key(self.options, cert_name, self.ca, key, proftmpl.profile)
 
     @ensure_arg("key")
     def do_sign(self, key_name):
-        cert_name = rl_input("Enter cert name: ", key_name)
+        cert_name = rl_input("Enter cert name: ", "%s_%i" % (key_name, self.ca.serial))
         keys = list(Key.selectBy(name=key_name))
         if len(keys) == 0:
             print "key [%s] not found" % key_name
@@ -674,7 +675,12 @@ class UseCLI(CLI):
                 print "Error: Key [%s] has never been signed yet" % key_name
                 return
             cert = max(key.certs, key=lambda x:x.serial)
-            sign_key(self.options, cert.name, self.ca, key, cert.profile)
+            cert_name = cert.name
+            num = "_%i" % cert.serial
+            if cert_name.endswith(num):
+                cert_name = cert_name[:-len(num)]
+            cert_name += "_%i" % self.ca.serial
+            sign_key(self.options, cert_name, self.ca, key, cert.profile)
 
     @ensure_arg("KRL file")
     def do_export_krl(self, file_name):
