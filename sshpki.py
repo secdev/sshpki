@@ -717,7 +717,7 @@ class UseCLI(CLI):
         t.close()
 
         tarstr.getvalue()
-        cmd = "base64 -d <<<%s | tar zx" % (base64.b64encode(tarstr.getvalue())).decode()
+        cmd = "echo %s|base64 -d|tar zx" % (base64.b64encode(tarstr.getvalue())).decode()
         print(cmd)
 
 
