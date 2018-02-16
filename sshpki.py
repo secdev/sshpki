@@ -694,7 +694,7 @@ class UseCLI(CLI):
                     validity = "until %s" % cert.end_time.strftime("%c")
                 else:
                     validity=""
-                print "  -> certificate {cert.serial:>3} {profile} {validity}".format(
+                print "  -> certificate {cert.name:<10} {cert.serial:>3} {profile} {validity}".format(
                     cert=cert, validity=validity, profile=profile_summary(cert.profile))
 
     @ensure_arg("key")
