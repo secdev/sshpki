@@ -60,6 +60,7 @@ class Key(SQLObject):
 
 class Cert(SQLObject):
     ca = ForeignKey("CA")
+    name = StringCol()
     key = ForeignKey("Key", cascade=False)
     serial = IntCol(default=-1)
     profile = ForeignKey("Profile")
@@ -278,7 +279,8 @@ def sign_key(options, cert_name, ca, key, profile_template):
     ca.serial += 1
     key.ca = ca
     certcontent = open(certfile).read()
-    cert = Cert(ca=ca, key=key, profile=prof2, serial=ca.serial, cert=certcontent)
+    cert = Cert(ca=ca, key=key, name=cert_name, profile=prof2, 
+                serial=ca.serial, cert=certcontent)
     if start_time:
         cert.start_time = start_time
     if end_time:
