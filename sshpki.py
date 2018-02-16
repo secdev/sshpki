@@ -476,9 +476,10 @@ class CACLI(CLI):
 
     def do_ls(self, arg):
         for ca in CA.select():
-            print "%-30s %8s  signed %2i keys" % (ca.name,
-                                                  "REVOKED" if ca.key.revoked else "active",
-                                                  len(ca.signed))
+            print "%-30s %8s %s signed %2i keys" % (ca.name,
+                                                    "REVOKED" if ca.key.revoked else "active",
+                                                    "HOST" if ca.hostca else "USER",
+                                                    len(ca.signed))
 
     @ensure_arg("CA")
     def do_add(self, ca_name):
