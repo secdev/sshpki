@@ -305,15 +305,14 @@ def update_krl(options, ca):
             kfile = get_tmpfile(options)
             kfile.write(k.pubkey)
             kfile.flush()
-            rev.append(kfile.name)
+            rev.append(kfile)
     with get_tmpfile(options) as krl:
         with get_tmpfile(options) as ca_pub:
             ca_pub.write(ca.key.pubkey)
             ca_pub.flush()
             cmd = [ "ssh-keygen", "-kf", krl.name,
-                    "-s", ca_pub.name ] + rev
+                    "-s", ca_pub.name ] + [f.name for f in rev]
             check_call(cmd)
-            shutil.copy(krl.name, "/tmp/krltoto")
         ca.krl = krl.read()
 
 
