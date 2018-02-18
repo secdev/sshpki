@@ -322,12 +322,12 @@ def revoke_key(options, key_name):
         print "Key [%s] not found" % key_name
         return
     key = keys[0]
-    if ask("Are you sure you want to revoke key [%s] ? " % key.name, "yn") == "n":
-            print "aborted."
+    if ask("Are you sure you want to revoke key [%s]" % key.name, "yn") == "n":
+            print "Revocation aborted."
             return
     if key.is_ca:
-        if ask("Key [%s] is a CA. Are you sure you want to revoke it ? " % key.name, "yn") == "n":
-            print "aborted."
+        if ask("Key [%s] is a CA. Are you sure you want to revoke it" % key.name, "yn") == "n":
+            print "Revocation aborted."
             return
     key.revoked = True
     for cert in key.certs:
