@@ -316,6 +316,25 @@ def update_krl(options, ca):
             shutil.copy(krl.name, "/tmp/krltoto")
         ca.krl = krl.read()
 
+
+def revoke_key(options, key_name):
+    keys = list(Key.selectBy(name=key_name))
+    if len(keys) == 0:
+        print "Key [%s] not found" % key_name
+        return
+    key = keys[0]
+    if ask("Are you sure you want to revoke key [%s] ? " % key.name, "yn") == "n":
+            print "aborted."
+            return
+    if key.is_ca:
+        if ask("Key [%s] is a CA. Are you sure you want to revoke it ? " % key.name, "yn") == "n":
+            print "aborted."
+            return
+    key.revoked = True
+    for cert in key.certs:
+        update_krl(options, cert.ca)
+
+
 def profile_summary(prof):
     s = []
     for k in [ "principals", "force_command", "source_address", "agent_forwarding",
@@ -570,21 +589,7 @@ class KeyCLI(CLI):
 
     @ensure_arg("key")
     def do_revoke(self, key_name):
-        keys = list(Key.selectBy(name=key_name))
-        if len(keys) == 0:
-            print "Key [%s] not found" % key_name
-            return
-        key = keys[0]
-        if ask("Are you sure you want to revoke key [%s] ? " % key.name, "yn") == "n":
-                print "aborted."
-                return
-        if key.is_ca:
-            if ask("Key [%s] is a CA. Are you sure you want to revoke it ? " % key.name, "yn") == "n":
-                print "aborted."
-                return
-        key.revoked = True
-        for cert in key.certs:
-            update_krl(self.options, cert.ca)
+        revoke_key(self.options, key_name)
 
     @ensure_arg("key file")
     def do_import(self, key_file):
