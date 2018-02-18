@@ -67,7 +67,7 @@ class Cert(SQLObject):
     cert = StringCol(unique=True)
     start_time = DateTimeCol(default=None)
     end_time = DateTimeCol(default=None)
-    def delete_key(self):
+    def delete_cert(self):
         self.profile.delete_profile()
         self.delete(self.id)
 
