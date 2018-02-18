@@ -615,6 +615,7 @@ class UseCLI(CLI):
 
     complete_sign = CLI._complete_key
     complete_resign = CLI._complete_key
+    complete_revoke = CLI._complete_key
     complete_show_key = CLI._complete_key
     complete_show_cert = CLI._complete_key
     complete_export = CLI._complete_key
@@ -707,6 +708,10 @@ class UseCLI(CLI):
                     validity=""
                 print "  -> certificate {cert.name:<10} {cert.serial:>3} {profile} {validity}".format(
                     cert=cert, validity=validity, profile=profile_summary(cert.profile))
+
+    @ensure_arg("key")
+    def do_revoke(self, key_name):
+        revoke_key(self.options, key_name)
 
     @ensure_arg("key")
     def do_export(self, name):
