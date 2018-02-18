@@ -612,6 +612,7 @@ class UseCLI(CLI):
         self.options = options
         self.prompt_push(ca.name)
 
+    complete_regenerate = CLI._complete_key
     complete_sign = CLI._complete_key
     complete_resign = CLI._complete_key
     complete_revoke = CLI._complete_key
@@ -657,6 +658,39 @@ class UseCLI(CLI):
         key = create_key(self.options, key_name, self.options.cert_bits)
         proftmpl = get_profile_template(self.options)
         sign_key(self.options, cert_name, self.ca, key, proftmpl.profile)
+
+    @ensure_arg("key")
+    def do_regenerate(self, key_name):
+        keys = list(Key.selectBy(name=key_name))
+        if len(keys) == 0:
+            print "key [%s] not found" % key_name
+        else:
+            key = keys[0]
+            new_key_name = key.name
+            m = re.search("\.[0-9]+$", key.name)
+            if m:
+                new_key_name = new_key_name[:-len(m.group())]
+
+            index = 0
+            similar = [re.search("\.([0-9]+)$", k.name)
+                       for k in Key.select("name like '%s.%%'" % new_key_name)]
+            if similar:
+                index = max([int(k.groups()[0]) for k in similar if k])+1
+            new_key_name = "%s.%i" % (new_key_name, index)
+            new_key_name = rl_input("Enter new key name: ", new_key_name)
+            new_key = create_key(self.options, new_key_name, key.bits)
+            if not key.certs:
+                print "Key [%s] has never been signed yet. No certificate generated for new key." % key_name
+            else:
+                cert = max(key.certs, key=lambda x:x.serial)
+                cert_name = cert.name
+                num = "_%i" % cert.serial
+                if cert_name.endswith(num):
+                    cert_name = cert_name[:-len(num)]
+                cert_name += "_%i" % self.ca.serial
+                sign_key(self.options, cert_name, self.ca, new_key, cert.profile)
+            if not key.revoked:
+                revoke_key(self.options, key.name)
 
     @ensure_arg("key")
     def do_sign(self, key_name):
