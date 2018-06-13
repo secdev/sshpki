@@ -472,6 +472,8 @@ class CLI(cmd.Cmd):
         return self._complete(CA, text)
     def _complete_key(self, text, line, begidx, endidx):
         return self._complete(Key, text)
+    def _complete_cert(self, text, line, begidx, endidx):
+        return self._complete(Cert, text)
     def _complete_profiletemplate(self, text, line, begidx, endidx):
         return self._complete(ProfileTemplate, text)
     def _complete_yubikey(self, text, line, begidx, endidx):
@@ -550,7 +552,7 @@ class CertCLI(CLI):
         self.options = options
         self.prompt_push("certs")
 
-    complete_show = CLI._complete_key
+    complete_show = CLI._complete_cert
 
     @ensure_arg("cert")
     def do_show(self, cert_name):
@@ -636,7 +638,7 @@ class UseCLI(CLI):
     complete_resign = CLI._complete_key
     complete_revoke = CLI._complete_key
     complete_show_key = CLI._complete_key
-    complete_show_cert = CLI._complete_key
+    complete_show_cert = CLI._complete_cert
     complete_export = CLI._complete_key
 
     def do_show(self, arg):
