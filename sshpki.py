@@ -528,7 +528,7 @@ class CACLI(CLI):
                                                     len(ca.signed))
 
     @ensure_arg("CA")
-    def do_add(self, ca_name):
+    def do_create(self, ca_name):
         ans = ask("Is this a [H]ost CA or a [U]ser CA", "hu")
         k = create_key(self.options, ca_name, self.options.ca_bits)
         create_CA(self.options, ca_name, k, hostca=(ans == "h"))
@@ -665,7 +665,7 @@ class UseCLI(CLI):
             print cert.cert
 
     @ensure_arg("key")
-    def do_add(self, key_name):
+    def do_create(self, key_name):
         cert_name = rl_input("Enter cert name: ", "%s_%i" % (key_name, self.ca.serial))
         key = create_key(self.options, key_name, self.options.cert_bits)
         proftmpl = get_profile_template(self.options)
@@ -908,7 +908,7 @@ class ProfileTemplateCLI(CLI):
         return prof
 
     @ensure_arg("profile")
-    def do_add(self, name):
+    def do_create(self, name):
         prof = self.ask_profile(name=name, principals="root,ubuntu")
         name = prof.pop("name")
         p = Profile(**prof)
