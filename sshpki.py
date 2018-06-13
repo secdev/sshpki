@@ -316,12 +316,7 @@ def update_krl(options, ca):
         ca.krl = krl.read()
 
 
-def revoke_key(options, key_name):
-    keys = list(Key.selectBy(name=key_name))
-    if len(keys) == 0:
-        print "Key [%s] not found" % key_name
-        return
-    key = keys[0]
+def revoke_key(options, key):
     if ask("Are you sure you want to revoke key [%s]" % key.name, "yn") == "n":
             print "Revocation aborted."
             return
@@ -344,6 +339,37 @@ def profile_summary(prof):
     if not s:
         s = ["no limits"]
     return ", ".join(s)
+
+
+def get_one_by(table, **kargs):
+    res = list(table.selectBy(**kargs))
+    if len(res) > 0:
+        return(res[0])
+
+def get_by_name(table, name):
+    obj = get_one_by(table, name=name)
+    if obj:
+        return obj
+    print "%s [%s] not found" % (table.__name__, name)
+
+def get_key_by_name(name):
+    return get_by_name(Key, name)
+
+def get_cert_by_name(name):
+    return get_by_name(Cert, name)
+
+def get_CA_by_name(name):
+    return get_by_name(CA, name)
+
+def get_profile_template_by_name(name):
+    return get_by_name(ProfileTemplate, name)
+
+def get_yubikey_by_serial(serial):
+    yk = get_one_by(Yubikey, serial=serial)
+    if yk:
+        return yk
+    print "Yubikey with serial [%s] not found in database" % serial
+
 
 ## __   __    _    _ _                                              _
 ## \ \ / /  _| |__(_) |_____ _  _   __ ___ _ __  _ __  __ _ _ _  __| |___
@@ -507,17 +533,16 @@ class CACLI(CLI):
 
     @ensure_arg("CA")
     def do_use(self, ca_name):
-        ca = CA.selectBy(name=ca_name)[0]
-        cli = UseCLI(self.options, ca)
-        cli.cmdloop_catcherrors()
+        ca = get_CA_by_name(ca_name)
+        if ca:
+            cli = UseCLI(self.options, ca)
+            cli.cmdloop_catcherrors()
 
     @ensure_arg("CA")
-    def do_show(self, ca):
-        cas = list(CA.selectBy(name=ca))
-        if len(cas) == 0:
-            print "CA [%s] not found" % ca
-        else:
-            print "cert-authority %s" % cas[0].key.pubkey
+    def do_show(self, ca_name):
+        ca = get_CA_by_name(ca_name)
+        if ca:
+            print "cert-authority %s" % ca.key.pubkey
 
 class CertCLI(CLI):
     def __init__(self, options):
@@ -528,13 +553,10 @@ class CertCLI(CLI):
     complete_show = CLI._complete_key
 
     @ensure_arg("cert")
-    def do_show(self, cert):
-        keys = list(Key.selectBy(name=cert))
-        if len(keys) == 0:
-            print "key for cert [%s] not found" % cert
-        else:
-            for c in keys[0].certs:
-                print c.cert
+    def do_show(self, cert_name):
+        cert = get_cert_by_name(cert_name)
+        if cert:
+            print cert.cert
 
     def do_ls(self, arg):
         for cert in Cert.select():
@@ -570,25 +592,22 @@ class KeyCLI(CLI):
             print "%-30s %-4s %-7s  %4i bits  %s" % (k.name, ca, status, k.bits, signed)
 
     @ensure_arg("key")
-    def do_show(self, key):
-        keys = list(Key.selectBy(name=key))
-        if len(keys) == 0:
-            print "key [%s] not found" % cert
-        else:
-            print keys[0].pubkey
+    def do_show(self, key_name):
+        key = get_key_by_name(key_name)
+        if key:
+            print key.pubkey
 
     @ensure_arg("key")
     def do_del(self, key_name):
-        keys = list(Key.selectBy(name=key_name))
-        if len(keys) == 0:
-            print "Key [%s] not found" % key_name
-            return
-        key = keys[0]
-        key.delete_key()
+        key = get_key_by_name(key_name)
+        if key:
+            key.delete_key()
 
     @ensure_arg("key")
     def do_revoke(self, key_name):
-        revoke_key(self.options, key_name)
+        key = get_key_by_name(key_name)
+        if key:
+            revoke_key(self.options, key)
 
     @ensure_arg("key file")
     def do_import(self, key_file):
@@ -624,12 +643,10 @@ class UseCLI(CLI):
         print "cert-authority %s" % self.ca.key.pubkey
 
     @ensure_arg("key")
-    def do_show_key(self, name):
-        keys = list(Key.selectBy(name=name))
-        if not keys:
-            print "key [%s] not found" % name
+    def do_show_key(self, key_name):
+        key = get_key_by_name(key_name)
+        if not key:
             return
-        key = keys[0]
         if key.ca != self.ca:
             if key.ca:
                 print "Warning: this key is not signed by the current CA [%s] but by CA [%s]" % (self.ca.name, key.ca.name)
@@ -637,20 +654,13 @@ class UseCLI(CLI):
                 print "Warning; this key is not signed by any CA yet."
         print key.pubkey
 
-    @ensure_arg("key")
-    def do_show_cert(self, name):
-        keys = list(Key.selectBy(name=name))
-        if not keys:
-            print "key [%s] not found" % name
-            return
-        key = keys[0]
-        if not key.certs:
-            print "No certs found for key [%s]" % name
-        else:
-            for cert in key.certs:
-                if cert.ca != self.ca:
-                    print "Warning: this cert is not signed by the current CA [%s] but by CA [%s]" % (self.ca.name, cert.ca.name)
-                print cert.cert
+    @ensure_arg("cert")
+    def do_show_cert(self, cert_name):
+        cert = get_cert_by_name(cert_name)
+        if cert:
+            if cert.ca != self.ca:
+                print "Warning: this cert is not signed by the current CA [%s] but by CA [%s]" % (self.ca.name, cert.ca.name)
+            print cert.cert
 
     @ensure_arg("key")
     def do_add(self, key_name):
@@ -661,11 +671,8 @@ class UseCLI(CLI):
 
     @ensure_arg("key")
     def do_regenerate(self, key_name):
-        keys = list(Key.selectBy(name=key_name))
-        if len(keys) == 0:
-            print "key [%s] not found" % key_name
-        else:
-            key = keys[0]
+        key = get_key_by_name(key_name)
+        if key:
             new_key_name = key.name
             m = re.search("\.[0-9]+$", key.name)
             if m:
@@ -690,26 +697,20 @@ class UseCLI(CLI):
                 cert_name += "_%i" % self.ca.serial
                 sign_key(self.options, cert_name, self.ca, new_key, cert.profile)
             if not key.revoked:
-                revoke_key(self.options, key.name)
+                revoke_key(self.options, key)
 
     @ensure_arg("key")
     def do_sign(self, key_name):
-        cert_name = rl_input("Enter cert name: ", "%s_%i" % (key_name, self.ca.serial))
-        keys = list(Key.selectBy(name=key_name))
-        if len(keys) == 0:
-            print "key [%s] not found" % key_name
-        else:
-            key = keys[0]
+        key = get_key_by_name(key_name)
+        if key:
+            cert_name = rl_input("Enter cert name: ", "%s_%i" % (key_name, self.ca.serial))
             proftmpl = get_profile_template(self.options)
             sign_key(self.options, cert_name, self.ca, key, proftmpl.profile)
 
     @ensure_arg("key")
     def do_resign(self, key_name):
-        keys = list(Key.selectBy(name=key_name))
-        if len(keys) == 0:
-            print "key [%s] not found" % key_name
-        else:
-            key = keys[0]
+        key = get_key_by_name(key_name)
+        if key:
             if not key.certs:
                 print "Error: Key [%s] has never been signed yet" % key_name
                 return
@@ -744,15 +745,15 @@ class UseCLI(CLI):
 
     @ensure_arg("key")
     def do_revoke(self, key_name):
-        revoke_key(self.options, key_name)
+        key = get_key_by_name(key_name)
+        if key:
+            revoke_key(self.options, key)
 
     @ensure_arg("key")
-    def do_export(self, name):
-        keys = list(Key.selectBy(name=name))
-        if not keys:
-            print "key [%s] not found" % name
+    def do_export(self, key_name):
+        key = get_key_by_name(key_name)
+        if not key:
             return
-        key = keys[0]
         cert = None
         t = datetime.datetime.now()
         for c in key.certs:
@@ -821,9 +822,8 @@ class KeyExportCLI(CLI):
             print "No yubikey found. Please insert a yubikey and retry."
             return
         while True:
-            yks = list(Yubikey.selectBy(serial=serial))
-            if yks:
-                yk = yks[0]
+            yk = get_yubikey_by_serial(serial)
+            if yk:
                 break
             ans = ask("This yubikey is not enrolled in the database. Enroll it ?", "yn")
             if ans == "n":
@@ -914,20 +914,17 @@ class ProfileTemplateCLI(CLI):
 
     @ensure_arg("profile")
     def do_delete(self, name):
-        pt = list(ProfileTemplate.selectBy(name=name))
+        pt = get_profile_template_by_name(name)
         if pt:
-            p = pt[0].profile
+            p = pt.profile
             p.delete(p.id)
-            pt[0].delete(pt[0].id)
+            pt.delete(pt.id)
             print "Profile template [%s] deleted." % name
-        else:
-            print "ERROR: Profile template [%s] not found." % name
 
     @ensure_arg("profile")
     def do_edit(self, name):
-        pt = list(ProfileTemplate.selectBy(name=name))
+        pt = get_profile_template_by_name(name)
         if pt:
-            pt = pt[0]
             p = pt.profile
             dct = {k:getattr(p,k) for k in p.sqlmeta.columns}
             in_prof = {k:("ny"[v] if type(v) is bool else v) for k,v in dct.iteritems() if v is not None}
@@ -935,8 +932,6 @@ class ProfileTemplateCLI(CLI):
             pt.name = prof.pop("name")
             for k,v in prof.iteritems():
                 setattr(p, k, v)
-        else:
-            print "ERROR: Profile template [%s] not found." % name
 
 class YubikeyCLI(CLI):
     def __init__(self, options):
@@ -969,10 +964,9 @@ class YubikeyCLI(CLI):
             print "Found yubikey with serial [%s]" % serial
             print "Mode is not CCID. sshpki cannot gather more info."
 
-        yks = list(Yubikey.selectBy(serial=serial))
-        if yks:
+        yk = get_yubikey_by_serial(serial)
+        if yk:
             print "This yubikey is enrolled in the database:"
-            yk = yks[0]
             usage = ("used for key %s" % yk.export.key.name) if yk.export else "not used"
             owner = ("owned by %s" % yk.owner) if yk.owner else "not owned"
             print "%-10s %-18s  %s" % (yk.serial,owner,usage)
@@ -984,11 +978,9 @@ class YubikeyCLI(CLI):
 
     @ensure_arg("serial number")
     def do_del(self, serial):
-        y = list(Yubikey.selectBy(serial=serial))
-        if len(y) == 0:
-            print "yubikey not found"
-        else:
-            Yubikey.delete(y[0].id)
+        yk = get_yubikey_by_serial(serial)
+        if yk:
+            Yubikey.delete(yk.id)
             print "yubikey deleted"
 
 ##  ___  ___
