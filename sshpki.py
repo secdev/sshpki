@@ -906,7 +906,7 @@ class ProfileTemplateCLI(CLI):
             prof[opt] = ans == "y"
         while True:
             ans = rl_input("""validity interval
-    end or start:end, start or end being
+    empty or <end> or <start>:<end> ; <start> or <end> being
     - YYYYMMDD
     - YYYYMMDDHHMMSS
     - [+-]([0-9]+[wdhms]){1,}):
