@@ -1003,7 +1003,7 @@ def create_pki(fname):
     for tb in [Meta, CA, Key, Cert, Profile, ProfileTemplate,
                FileExport, YubikeyExport, Yubikey]:
         tb.createTable()
-    name = raw_input("YUBIKEY SSH PKI name: ")
+    name = raw_input("SSH PKI name: ")
     Meta(version=DBVERSION, pkiname=name)
 
 def open_pki(fname):
