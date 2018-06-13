@@ -1030,11 +1030,11 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("-C", "--create", action="store_true",
                         help="Create the DB and exit")
-    parser.add_argument("-f", "--pki-db", default=os.path.expanduser(DEFAULTDB),
-                        help="path to the pki DB file")
     parser.add_argument("--ca_bits", default=4096)
     parser.add_argument("--cert_bits", default=2048)
     parser.add_argument("--keep-temp", action="store_true")
+    parser.add_argument("pki_db", default=os.path.expanduser(DEFAULTDB),
+                        help="path to the pki DB file")
 
     options = parser.parse_args()
 
