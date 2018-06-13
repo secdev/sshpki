@@ -740,7 +740,7 @@ class UseCLI(CLI):
 
     def do_ls(self, arg):
         for k in self.ca.signed:
-            status = "REVOKED" if k.revoked else "ACTIVE" 
+            status = "REVOKED" if k.revoked else "ACTIVE"
             print "%-30s %-7s %4i bits:" % (k.name, status, k.bits)
             for cert in k.certs:
                 if cert.start_time and cert.end_time:
