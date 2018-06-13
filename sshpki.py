@@ -189,6 +189,11 @@ def create_key(options, name, bits):
         export_key(options, k, tmpkey, pwd)
         return k
 
+def create_yk_key(options, name, bits):
+    o = check_output(["ykneomgr", "--get-serialno"]).strip()
+    print "Found yubikey neo with serial [%s]" % o
+    raise NotImplemented
+
 def get_profile_template(options):
     while True:
         print "Choose profile:"
@@ -532,6 +537,11 @@ class CACLI(CLI):
         ans = ask("Is this a [H]ost CA or a [U]ser CA", "hu")
         k = create_key(self.options, ca_name, self.options.ca_bits)
         create_CA(self.options, ca_name, k, hostca=(ans == "h"))
+
+    @ensure_arg("CA")
+    def do_ykadd(self, ca_name):
+        k = create_yk_key(self.options, ca_name, self.options.ca_bits)
+        create_CA(self.options, ca_name, k)
 
     @ensure_arg("CA")
     def do_use(self, ca_name):
