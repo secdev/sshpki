@@ -581,7 +581,7 @@ class CertCLI(CLI):
                 validity = "until %s" % cert.end_time.strftime("%c")
             else:
                 validity=""
-            print "{k.name:<20} {ca.name:<15} {cert.serial} {profile} {validity}".format(
+            print "{cert.name:<20} key={k.name:<20} {ca.name:<15} {cert.serial} {profile} {validity}".format(
                 k=cert.key, ca=cert.ca, cert=cert, validity=validity, profile=profile_summary(cert.profile))
 
 
